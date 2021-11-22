@@ -1,4 +1,6 @@
 
+namespace: octops-system
+
 image:
   repository: registry.digitalocean.com/winterpixel/octops-ingress-controller
   tag: 0.1.3
