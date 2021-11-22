@@ -1,13 +1,14 @@
 package reconcilers
 
 import (
-	agonesv1 "agones.dev/agones/pkg/apis/agones/v1"
 	"fmt"
+	"strconv"
+	"strings"
+
+	agonesv1 "agones.dev/agones/pkg/apis/agones/v1"
 	"github.com/Octops/gameserver-ingress-controller/pkg/gameserver"
 	"github.com/pkg/errors"
 	networkingv1 "k8s.io/api/networking/v1"
-	"strconv"
-	"strings"
 )
 
 type IngressOption func(gs *agonesv1.GameServer, ingress *networkingv1.Ingress) error
@@ -70,6 +71,11 @@ func WithTLS(mode gameserver.IngressRoutingMode) IngressOption {
 			return err
 		}
 
+		specificsecret, ok := gameserver.HasAnnotation(gs, gameserver.OctopsAnnotationSecretName)
+		if ok {
+			secret = specificsecret
+		}
+
 		ingress.Spec.TLS = []networkingv1.IngressTLS{
 			{
 				Hosts: []string{
@@ -123,6 +129,11 @@ func WithTLSCertIssuer(issuerName string) IngressOption {
 		if terminateTLS, err := strconv.ParseBool(terminate); err != nil {
 			return errors.Errorf("annotation %s for %s must be \"true\" or \"false\"", gameserver.OctopsAnnotationTerminateTLS, gs.Name)
 		} else if terminateTLS == false {
+			return nil
+		}
+
+		_, secok := gameserver.HasAnnotation(gs, gameserver.OctopsAnnotationSecretName)
+		if secok {
 			return nil
 		}
 
